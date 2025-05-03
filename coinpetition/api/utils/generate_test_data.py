@@ -3,17 +3,18 @@ Django management command to generate test data.
 """
 import random
 from datetime import datetime, timedelta
+from django.utils import timezone
 from api.models import GameSession, GameCoin, CoinValueHistory
 
 def generate_test_data(coin: GameCoin):
     # Generate historical data for the past 30 days
-    end_date = datetime.now()
+    end_date = timezone.now()
     
     value = round(random.uniform(80.0, 120.0), 2)
     
     for day in range(30):
         # Calculate the date for this data point
-        date = end_date - timedelta(days=day)
+        record_date = end_date - timedelta(days=day)
         
         # For historical data, vary the value by a random percentage
         # More recent days should be closer to the current value
@@ -28,6 +29,6 @@ def generate_test_data(coin: GameCoin):
         # Create historical record
         CoinValueHistory.objects.create(
             coin=coin,
-            timestamp=date,
+            timestamp=record_date,
             value=rounded_value
         )
