@@ -123,7 +123,7 @@ class FinanceQuestionView(APIView):
             if raw_llm_response.startswith("```json"):
                 cleaned_response = raw_llm_response.strip().replace("```json", "").replace("```", "").strip()
             else:
-                 cleaned_response = raw_llm_response # Assume it's already valid JSON if no fences
+                cleaned_response = raw_llm_response
 
             try:
                 question_data = loads(cleaned_response)
@@ -155,7 +155,7 @@ class FinanceQuestionView(APIView):
         )
 
         last_value = CoinValueHistory.objects.filter(coin=coin).order_by("-timestamp").first().value
-        factor = np.random.normal(0.1, 0.3)
+        factor = max(0, np.random.normal(0.1, 0.3))
         new_value = last_value * (1 + (factor if correct else -factor))
         new_value = max(0.01, min(new_value, 100000))
         CoinValueHistory.objects.create(
