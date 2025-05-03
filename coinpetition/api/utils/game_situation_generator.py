@@ -3,6 +3,7 @@ from typing import List, Any, TypedDict
 import random
 from .game_data import TARGETS, AREAS, EVENT_TYPES
 from ..models import Situation
+
 API_KEY = "AIzaSyDZyBoLtY9TKlrDQlEYWYf6H4mZKSv2Uj8"
 FLASH_MODEL = "gemini-2.0-flash"
 PRO_MODEL = "gemini-2.0-pro"
@@ -81,18 +82,19 @@ class SituationGenerator:
         # Only attempt to get history if we have a coin_id
         if not self.coin_id:
             return []
-        
+
         # Get the last 15 situations for this coin, ordered by created_at descending
-        previous_situations = Situation.objects.filter(
-            coin_id=self.coin_id
-        ).order_by('-created_at')[:MAX_HISTORY]
-        
+        previous_situations = Situation.objects.filter(coin_id=self.coin_id).order_by(
+            "-created_at"
+        )[:MAX_HISTORY]
+
         # Convert to a format similar to what we used before
         return [
             {
                 "situation": situation.description,
                 "category": situation.category,
-                "selected_choice": situation.selected_choice or situation.choices[0]["id"],
+                "selected_choice": situation.selected_choice
+                or situation.choices[0]["id"],
                 "choices": situation.choices,
             }
             for situation in previous_situations
@@ -101,6 +103,7 @@ class SituationGenerator:
     @staticmethod
     def parse_response(response) -> dict:
         # Extract function call from the response
+        print(response.candidates[0].content.parts)
         function_call = response.candidates[0].content.parts[0].function_call
         return {
             "situation": function_call.args["situation"],
@@ -122,10 +125,10 @@ class SituationGenerator:
         target = random.choice(TARGETS)
         area = random.choice(AREAS)
         event_type = random.choice(EVENT_TYPES)
-        
+
         # Get previous situations from the database
         previous_situations = self.get_previous_situations()
-        
+
         # Base prompt if no history
         if not previous_situations:
             return f"""
@@ -135,12 +138,18 @@ class SituationGenerator:
 
             The scenario should involve a {target} in a {area} dealing with a 
             {event_type}. Present exactly 2 choices to the player.
-            For each choice, provide a consequence and updated coin value.
+            
+            For each choice, you MUST provide:
+            1. A text description of the choice
+            2. A consequence description
+            3. An updated_value as a number (positive or negative) representing how this 
+               choice affects the coin's value
 
             Keep the tone similar to REIGNS - sometimes serious, sometimes 
             absurd or unexpected.
+            **Only respond via the `print_situation` function call. Do not reply with plain text.**
             """
-        
+
         # Build continuity prompt with history from database
         history_items = []
         for item in previous_situations:  # Use last 5 for context
@@ -151,13 +160,11 @@ class SituationGenerator:
                     if choice.get("id") == item["selected_choice"]:
                         choice_text = choice.get("text", "unknown")
                         break
-            
-            history_items.append(
-                f"- {item['situation']} (Player chose: {choice_text})"
-            )
-            
+
+            history_items.append(f"- {item['situation']} (Player chose: {choice_text})")
+
         history_summary = "\n".join(history_items)
-        
+
         return f"""
         Create the next scenario for an interactive role-playing cryptocurrency 
         game where the player manages a coin called {coin_name} currently 
@@ -172,19 +179,31 @@ class SituationGenerator:
         IMPORTANT: Do not repeat previous scenarios. Create a fresh situation 
         that builds on the story. Present exactly 2 choices to the player.
         
-        For each choice, provide a consequence and updated coin value.
+        For each choice, you MUST provide:
+        1. A text description of the choice
+        2. A consequence description
+        3. An updated_value as the new number that the coin's value will be. It can only be positive.
+           
         Keep the tone similar to REIGNS - sometimes serious, sometimes absurd 
         or unexpected.
+        **Only respond via the `print_situation` function call. Do not reply with plain text.**
         """
 
 
-def get_game_situation(coin_name: str, coin_value: float, coin_id=None):
+def get_game_situation(coin_name: str, coin_value: float, coin_id=None, counter=0):
     """Get a standardized game situation for the frontend with continuity."""
     generator = SituationGenerator(coin_id=coin_id)
-    
+
     # Generate a new situation using continuity from database
     prompt = generator.get_continuity_prompt(coin_name, coin_value)
-    result = generator.send_to_model(prompt)
-    
+    try:
+        result = generator.send_to_model(prompt)
+    except Exception as e:
+        print(f"Error generating content: {e}")
+        if counter < 3:
+            return get_game_situation(coin_name, coin_value, coin_id, counter + 1)
+        else:
+            raise Exception("Failed to generate a situation")
+
     # The situation ID will be created by the database
     return result
