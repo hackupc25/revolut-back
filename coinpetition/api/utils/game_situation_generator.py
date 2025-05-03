@@ -2,7 +2,7 @@ import google.generativeai as genai
 from typing import List, Any, TypedDict
 import random
 from .game_data import TARGETS, AREAS, EVENT_TYPES
-
+from ..models import Situation
 API_KEY = "AIzaSyDZyBoLtY9TKlrDQlEYWYf6H4mZKSv2Uj8"
 FLASH_MODEL = "gemini-2.0-flash"
 PRO_MODEL = "gemini-2.0-pro"
@@ -81,9 +81,6 @@ class SituationGenerator:
         # Only attempt to get history if we have a coin_id
         if not self.coin_id:
             return []
-            
-        # Import here to avoid circular imports
-        from coinpetition.api.models import Situation
         
         # Get the last 15 situations for this coin, ordered by created_at descending
         previous_situations = Situation.objects.filter(

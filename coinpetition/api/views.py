@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from datetime import date
 from json import loads
 from django.utils import timezone
@@ -38,7 +38,10 @@ class GameSessionView(APIView):
 
             generate_test_data(coin)
 
-            GamePlayer.objects.create(name=player["player_name"], coin=coin, game_session=game_session)
+            GamePlayer.objects.update_or_create(
+                name=player["player_name"], 
+                defaults={"coin": coin, "game_session": game_session}
+            )
         
         return Response({"session_id": game_session.session_id}, status=status.HTTP_200_OK)
     
