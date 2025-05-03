@@ -5,8 +5,8 @@ from django.shortcuts import get_object_or_404
 from datetime import date
 from json import loads
 
-from .models import GameSession, GameCoin, FinanceQuestion
-from .serializers import GameSessionSerializer, FinanceQuestionSerializer
+from .models import GameSession, GameCoin, FinanceQuestion, FinanceQuestionAnswer
+from .serializers import GameSessionSerializer
 from coinpetition.finance_question_generator import generate_question
 from .utils.game_situation_generator import GameState, generate_situation, parse_situation_response
 
@@ -76,7 +76,6 @@ class FinanceQuestionView(APIView):
             try:
                 question_data = loads(cleaned_response)
             except Exception as e:
-                # Handle potential JSON parsing errors after cleaning
                 print(f"Error parsing cleaned LLM response: {e}\nResponse: {cleaned_response}")
                 return Response({"error": "Failed to parse finance question from LLM"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -87,5 +86,21 @@ class FinanceQuestionView(APIView):
                 explanation=question_data["explanation"]
             )
 
-        serializer = FinanceQuestionSerializer(question)
-        return Response(serializer.data)
+        return Response({"question": question.question, "options": question.options}, status=status.HTTP_200_OK)
+    
+    def post(self, request, session_id):
+        game_session = get_object_or_404(GameSession, session_id=session_id)
+        question = FinanceQuestion.objects.filter(date=date.today()).first()
+        answer = request.data.get("answer")
+        correct = question.correct_answer == answer
+
+        FinanceQuestionAnswer.objects.create(
+            question=question, 
+            answer=answer, 
+            correct=correct, 
+            user=game_session
+        )
+
+        return Response({"correct_answer": question.correct_answer, "explanation": question.explanation}, status=status.HTTP_200_OK)
+
+        

@@ -43,3 +43,20 @@ class FinanceQuestion(models.Model):
     correct_answer = models.CharField(max_length=1)
     explanation = models.TextField()
     date = models.DateField(auto_now_add=True)
+
+
+class FinanceQuestionAnswer(models.Model):
+    """Model to track the answers to the finance questions for each user"""
+    question = models.ForeignKey(
+        FinanceQuestion,
+        related_name='question_answer',
+        on_delete=models.CASCADE
+    )
+    answer = models.CharField(max_length=1)
+    correct = models.BooleanField(default=False)
+    user = models.ForeignKey(
+        GameCoin,
+        related_name='question_answer',
+        on_delete=models.CASCADE
+    )
+    
