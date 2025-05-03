@@ -34,12 +34,14 @@ class CoinSituationView(APIView):
         coin = get_object_or_404(
             GameCoin, game_session=game_session, coin_name=coin_name
         )
-        current_value = CoinValueHistory.objects.filter(coin=coin).order_by("-timestamp").first().value
+        current_value = CoinValueHistory.objects.filter(
+            coin=coin).order_by("-timestamp").first().value
 
         # Use the game situation generator
         situation_data = get_game_situation(
             coin_name=coin.coin_name,
             coin_value=current_value,
+            coin_id=coin.id,
         )
 
         # Convert Gemini model objects to standard Python data types
@@ -56,13 +58,15 @@ class CoinSituationView(APIView):
             coin=coin,
             category=str(situation_data["category"]),
             description=str(situation_data["situation"]),
-            choices=serializable_choices
+            choices=serializable_choices,
+            initial_value=current_value
         )
 
         # Format the response
         response_data = {
             "id": situation.id,
             "coin_name": coin.coin_name,
+            "current_value": current_value,
             "situation": situation.description,
             "category": situation.category,
             "choices": [
@@ -88,7 +92,7 @@ class FinanceQuestionView(APIView):
     """
     API view to get a finance question
     """
-    def get(self, request, session_id):
+    def get(self, request, session_id, coin_name):
         game_session = get_object_or_404(GameSession, session_id=session_id)
         question = FinanceQuestion.objects.filter(date=date.today()).first()
         if not question:
@@ -111,19 +115,20 @@ class FinanceQuestionView(APIView):
                 explanation=question_data["explanation"]
             )
 
-        return Response({"question": question.question, "options": question.options}, status=status.HTTP_200_OK)
+        return Response({"question": question.question, "answers": question.options}, status=status.HTTP_200_OK)
     
-    def post(self, request, session_id):
+    def post(self, request, session_id, coin_name):
         game_session = get_object_or_404(GameSession, session_id=session_id)
         question = FinanceQuestion.objects.filter(date=date.today()).first()
         answer = request.data.get("answer")
         correct = question.correct_answer == answer
+        coin = get_object_or_404(GameCoin, game_session=game_session, coin_name=coin_name)
 
         FinanceQuestionAnswer.objects.create(
             question=question, 
             answer=answer, 
             correct=correct, 
-            user=game_session
+            user=coin
         )
 
         return Response({"correct_answer": question.correct_answer, "explanation": question.explanation}, status=status.HTTP_200_OK)
