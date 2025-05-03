@@ -117,26 +117,24 @@ class FinanceQuestionView(APIView):
     """
     def get(self, request, session_id, coin_name):
         game_session = get_object_or_404(GameSession, session_id=session_id)
-        question = FinanceQuestion.objects.filter(date=date.today()).first()
-        if not question:
-            raw_llm_response = generate_question()
-            if raw_llm_response.startswith("```json"):
-                cleaned_response = raw_llm_response.strip().replace("```json", "").replace("```", "").strip()
-            else:
-                cleaned_response = raw_llm_response
+        raw_llm_response = generate_question()
+        if raw_llm_response.startswith("```json"):
+            cleaned_response = raw_llm_response.strip().replace("```json", "").replace("```", "").strip()
+        else:
+            cleaned_response = raw_llm_response
 
-            try:
-                question_data = loads(cleaned_response)
-            except Exception as e:
-                print(f"Error parsing cleaned LLM response: {e}\nResponse: {cleaned_response}")
-                return Response({"error": "Failed to parse finance question from LLM"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        try:
+            question_data = loads(cleaned_response)
+        except Exception as e:
+            print(f"Error parsing cleaned LLM response: {e}\nResponse: {cleaned_response}")
+            return Response({"error": "Failed to parse finance question from LLM"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            question = FinanceQuestion.objects.create(
-                question=question_data["question"],
-                options=question_data["options"],
-                correct_answer=question_data["correct_answer"],
-                explanation=question_data["explanation"]
-            )
+        question = FinanceQuestion.objects.create(
+            question=question_data["question"],
+            options=question_data["options"],
+            correct_answer=question_data["correct_answer"],
+            explanation=question_data["explanation"]
+        )
 
         return Response({"question": question.question, "answers": question.options}, status=status.HTTP_200_OK)
     
