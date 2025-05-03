@@ -8,7 +8,7 @@ from json import loads
 from .models import GameSession, GameCoin, FinanceQuestion, FinanceQuestionAnswer
 from .serializers import GameSessionSerializer
 from coinpetition.finance_question_generator import generate_question
-from .utils.game_situation_generator import GameState, generate_situation, parse_situation_response
+from .utils.game_situation_generator import get_game_situation
 
 
 class GameSessionView(APIView):
@@ -31,33 +31,81 @@ class CoinSituationView(APIView):
             GameCoin, game_session=game_session, coin_name=coin_name
         )
         
-        # Use game situation generator to create a relevant situation
-        game_state = GameState(coin.coin_name, coin.current_value)
-        situation_text = generate_situation(game_state)
-        situation, category, choice_a, choice_b = parse_situation_response(
-            situation_text
+        # Get the coin history from the database
+        coin_history = []
+        for event in coin.history.all().order_by('-created_at'):
+            coin_history.append({
+                "situation": event.situation,
+                "category": event.category,
+                "choice": event.choice,
+                "consequence": event.consequence,
+                "value_after": event.value_after
+            })
+        
+        # Use the new game situation generator
+        choices = get_game_situation(
+            coin_name=coin.coin_name,
+            coin_value=coin.current_value,
+            history=coin_history
         )
         
+        # Format the response
         response_data = {
             "coin_name": coin.coin_name,
-            "situation": situation,
-            "category": category,
+            "situation": choices[0]["situation"],
+            "category": choices[0]["category"],
             "choices": [
                 {
                     "id": "A",
-                    "text": choice_a.get("text", ""),
-                    "consequence": choice_a.get("consequence", "")
+                    "text": choices[0]["choice_text"],
+                    "consequence": choices[0]["consequence"],
+                    "updated_value": choices[0]["updated_value"]
                 },
                 {
                     "id": "B",
-                    "text": choice_b.get("text", ""),
-                    "consequence": choice_b.get("consequence", "")
+                    "text": choices[1]["choice_text"],
+                    "consequence": choices[1]["consequence"],
+                    "updated_value": choices[1]["updated_value"]
                 }
             ]
         }
         
         return Response(response_data)
     
+    def post(self, request, session_id, coin_name):
+        game_session = get_object_or_404(GameSession, session_id=session_id)
+        coin = get_object_or_404(
+            GameCoin, game_session=game_session, coin_name=coin_name
+        )
+        
+        # Process the user's choice
+        choice_id = request.data.get("choice_id", "").upper()
+        situation = request.data.get("situation", "")
+        category = request.data.get("category", "")
+        choice_text = request.data.get("choice_text", "")
+        consequence = request.data.get("consequence", "")
+        updated_value = float(request.data.get("updated_value", 0))
+        
+        # Update the coin value
+        value_change = updated_value - coin.current_value
+        coin.current_value = updated_value
+        coin.save()
+        
+        # Record the event in history
+        coin.history.create(
+            situation=situation,
+            category=category,
+            choice=f"{choice_id}: {choice_text}",
+            consequence=consequence,
+            value_after=updated_value
+        )
+        
+        return Response({
+            "coin_name": coin.coin_name,
+            "new_value": coin.current_value,
+            "value_change": value_change
+        })
+
 
 class FinanceQuestionView(APIView):
     """
