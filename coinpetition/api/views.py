@@ -1,14 +1,14 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from datetime import date
 from json import loads
 from django.utils import timezone
-
+from uuid import uuid4
 from .models import (
     GameSession, GameCoin, FinanceQuestion, FinanceQuestionAnswer,
-    Situation, CoinValueHistory
+    Situation, CoinValueHistory, GamePlayer
 )
 from .serializers import GameSessionSerializer
 from coinpetition.finance_question_generator import generate_question
@@ -23,6 +23,23 @@ class GameSessionView(APIView):
         game_session = get_object_or_404(GameSession, session_id=session_id)
         serializer = GameSessionSerializer(game_session)
         return Response(serializer.data)
+    
+    def post(self, request):
+        players = request.data.get("players")
+        if not players:
+            return Response({"error": "Players are required"}, status=status.HTTP_400_BAD_REQUEST)
+        uuid = uuid4()
+        game_session = GameSession.objects.create(session_id=uuid)
+        for player in players:
+            coin = GameCoin.objects.create(
+                coin_name=player["coin_name"],
+                game_session=game_session,
+                current_value=1.0
+            )
+            GamePlayer.objects.create(name=player["player_name"], coin=coin, game_session=game_session)
+        
+        return redirect(f"/game/{game_session.session_id}/")
+    
 
 
 class CoinSituationView(APIView):
