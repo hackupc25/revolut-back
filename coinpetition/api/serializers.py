@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import GameSession, GameCoin, CoinValueHistory
+from .models import GameSession, GameCoin, CoinValueHistory, FinanceQuestion
 
 
 class CoinValueHistorySerializer(serializers.ModelSerializer):
@@ -22,3 +22,9 @@ class GameSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = GameSession
         fields = ['session_id', 'created_at', 'updated_at', 'coins']
+
+
+class FinanceQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FinanceQuestion
+        fields = ['question', 'options', 'correct_answer', 'explanation']

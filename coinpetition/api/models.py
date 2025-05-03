@@ -34,3 +34,12 @@ class CoinValueHistory(models.Model):
             models.Index(fields=['coin', 'timestamp']),
         ]
         ordering = ['-timestamp']
+
+
+class FinanceQuestion(models.Model):
+    """Model to track a finance question."""
+    question = models.TextField()
+    options = models.JSONField()
+    correct_answer = models.CharField(max_length=1)
+    explanation = models.TextField()
+    date = models.DateField(auto_now_add=True)
