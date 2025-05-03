@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Blackout App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: #000;
+            font-family: 'Orbitron', sans-serif;
+            color: #FFD700;
+            overflow: hidden;
+            cursor: none;
+        }
+
+        .spotlight {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            pointer-events: none;
+            background: radial-gradient(
+                ellipse 30vmax 25vmax at var(--cursorX, 50vw) var(--cursorY, 50vh),
+                rgba(255, 255, 200, 0.05) 0%,
+                rgba(0, 0, 0, 0.6) 50%,
+                rgba(0, 0, 0, 0.98) 100%
+            );
+            z-index: 1000;
+            transition: background 0.1s;
+        }
+
+        .beam {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+            border-left: 1px solid rgba(255, 255, 150, 0.1);
+            border-right: 1px solid rgba(255, 255, 150, 0.1);
+            z-index: 999;
+        }
+
+        .container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            width: 80%;
+        }
+
+        h1 {
+            font-size: 4em;
+            margin-bottom: 1em;
+        }
+
+        label, select, input, button {
+            display: block;
+            margin: 1em auto;
+            font-size: 1.2em;
+            background: none;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 0.5em 1em;
+            border-radius: 10px;
+        }
+
+        label {
+            width: 20%;
+        }
+
+        button:hover {
+            background-color: #FFD700;
+            color: black;
+            cursor: pointer;
+        }
+
+        output {
+            display: block;
+            font-size: 1.5em;
+            margin-top: 1em;
+        }
+
+        .light-message {
+            background-color: #FFD700; /* Fondo amarillo */
+            color: black; /* Letras negras */
+            font-size: 1.2em;
+            margin: 1em auto; /* Centrado horizontal */
+            padding: 1em;
+            border-radius: 10px;
+            text-align: left; /* Alineación del texto */
+            box-shadow: 0 0 20px #FFD700; /* Efecto de brillo */
+            z-index: 2000; /* Asegurarse de que esté por encima de otros elementos */
+            position: relative; /* No afecta al desplazamiento */
+            max-width: 80%; /* Limitar el ancho del mensaje */
+            word-wrap: break-word; /* Ajustar texto largo */
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BLACKOUT</h1>
+        <label for="usuario">Select a user:</label>
+        <select id="usuario">
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+        </select>
+
+        <label for="dias">Days of simulation:</label>
+        <input type="range" id="dias" min="1" max="7" value="3" oninput="this.nextElementSibling.value = this.value">
+        <output>3</output>
+
+        <button onclick="generarRecomendacion()">Generate cash recommendations</button>
+        <div id="response"></div>
+    </div>
+    <div class="spotlight"></div>
+
+    <script>
+        document.addEventListener('mousemove', function(e) {
+            const x = e.clientX;
+            const y = e.clientY;
+
+            document.documentElement.style.setProperty('--cursorX', x + 'px');
+            document.documentElement.style.setProperty('--cursorY', y + 'px');
+        });
+
+        async function generarRecomendacion() {
+            const usuario = document.getElementById("usuario").value;
+            const dias = document.getElementById("dias").value;
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: usuario,
+                        duration_days: dias,
+                    }),
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById("response").innerHTML = `
+                        <div class="light-message">
+                            <p><strong>Now you see the light!</strong></p>
+                            <p>${data.result}</p>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById("response").innerText = `Error: ${data.error}`;
+                }
+            } catch (error) {
+                document.getElementById("response").innerText = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
