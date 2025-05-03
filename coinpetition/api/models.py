@@ -67,6 +67,7 @@ class Situation(models.Model):
     category = models.CharField(max_length=50)
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    initial_value = models.FloatField()
 
     choices = models.JSONField()
 

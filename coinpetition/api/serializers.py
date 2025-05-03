@@ -13,7 +13,7 @@ class GameCoinSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = GameCoin
-        fields = ['coin_name', 'current_value', 'value_history']
+        fields = ['coin_name', 'value_history']
 
 
 class GameSessionSerializer(serializers.ModelSerializer):
