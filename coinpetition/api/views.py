@@ -4,8 +4,12 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from datetime import date
 from json import loads
+from django.utils import timezone
 
-from .models import GameSession, GameCoin, FinanceQuestion, FinanceQuestionAnswer
+from .models import (
+    GameSession, GameCoin, FinanceQuestion, FinanceQuestionAnswer,
+    Situation, CoinValueHistory
+)
 from .serializers import GameSessionSerializer
 from coinpetition.finance_question_generator import generate_question
 from .utils.game_situation_generator import get_game_situation
@@ -30,88 +34,71 @@ class CoinSituationView(APIView):
         coin = get_object_or_404(
             GameCoin, game_session=game_session, coin_name=coin_name
         )
-        
-        # Get the coin history from the database
-        coin_history = []
-        for event in coin.history.all().order_by('-created_at'):
-            coin_history.append({
-                "situation": event.situation,
-                "category": event.category,
-                "choice": event.choice,
-                "consequence": event.consequence,
-                "value_after": event.value_after
-            })
-        
-        # Use the new game situation generator
-        choices = get_game_situation(
+
+        # Use the game situation generator
+        situation_data = get_game_situation(
             coin_name=coin.coin_name,
             coin_value=coin.current_value,
-            history=coin_history
         )
-        
+        print(situation_data)
+
+        # Convert Gemini model objects to standard Python data types
+        serializable_choices = []
+        for choice in situation_data["choices"]:
+            serializable_choices.append({
+                "id": str(choice["id"]),
+                "text": str(choice["text"]),
+                "consequence": str(choice["consequence"]),
+                "updated_value": float(choice["updated_value"]),
+            })
+
+        # Get the latest value history or create one if it doesn't exist
+        # first() because ordering is already by -timestamp
+        latest_value_history = coin.value_history.first()
+        if not latest_value_history:
+            # If no history exists, create one with the current timestamp
+            latest_value_history = coin.value_history.create(
+                timestamp=timezone.now(),
+                value=coin.current_value
+            )
+
+        situation = Situation.objects.create(
+            coin_value_history=latest_value_history,
+            category=str(situation_data["category"]),
+            description=str(situation_data["situation"]),
+            choices=serializable_choices
+        )
+
         # Format the response
         response_data = {
+            "id": situation.id,
             "coin_name": coin.coin_name,
-            "situation": choices[0]["situation"],
-            "category": choices[0]["category"],
+            "situation": situation.description,
+            "category": situation.category,
             "choices": [
                 {
-                    "id": "A",
-                    "text": choices[0]["choice_text"],
-                    "consequence": choices[0]["consequence"],
-                    "updated_value": choices[0]["updated_value"]
+                    "id": situation.choices[0]["id"],
+                    "text": situation.choices[0]["text"],
+                    "consequence": situation.choices[0]["consequence"],
+                    "updated_value": situation.choices[0]["updated_value"]
                 },
                 {
-                    "id": "B",
-                    "text": choices[1]["choice_text"],
-                    "consequence": choices[1]["consequence"],
-                    "updated_value": choices[1]["updated_value"]
+                    "id": situation.choices[1]["id"],
+                    "text": situation.choices[1]["text"],
+                    "consequence": situation.choices[1]["consequence"],
+                    "updated_value": situation.choices[1]["updated_value"]
                 }
             ]
         }
-        
+
         return Response(response_data)
-    
-    def post(self, request, session_id, coin_name):
-        game_session = get_object_or_404(GameSession, session_id=session_id)
-        coin = get_object_or_404(
-            GameCoin, game_session=game_session, coin_name=coin_name
-        )
-        
-        # Process the user's choice
-        choice_id = request.data.get("choice_id", "").upper()
-        situation = request.data.get("situation", "")
-        category = request.data.get("category", "")
-        choice_text = request.data.get("choice_text", "")
-        consequence = request.data.get("consequence", "")
-        updated_value = float(request.data.get("updated_value", 0))
-        
-        # Update the coin value
-        value_change = updated_value - coin.current_value
-        coin.current_value = updated_value
-        coin.save()
-        
-        # Record the event in history
-        coin.history.create(
-            situation=situation,
-            category=category,
-            choice=f"{choice_id}: {choice_text}",
-            consequence=consequence,
-            value_after=updated_value
-        )
-        
-        return Response({
-            "coin_name": coin.coin_name,
-            "new_value": coin.current_value,
-            "value_change": value_change
-        })
 
 
 class FinanceQuestionView(APIView):
     """
     API view to get a finance question
     """
-    def get(self, request, session_id, coin_name):
+    def get(self, request, session_id):
         game_session = get_object_or_404(GameSession, session_id=session_id)
         question = FinanceQuestion.objects.filter(date=date.today()).first()
         if not question:
@@ -134,11 +121,10 @@ class FinanceQuestionView(APIView):
                 explanation=question_data["explanation"]
             )
 
-        return Response({"question": question.question, "answers": question.options}, status=status.HTTP_200_OK)
+        return Response({"question": question.question, "options": question.options}, status=status.HTTP_200_OK)
     
-    def post(self, request, session_id, coin_name):
+    def post(self, request, session_id):
         game_session = get_object_or_404(GameSession, session_id=session_id)
-        coin = get_object_or_404(GameCoin, game_session=game_session, coin_name=coin_name)
         question = FinanceQuestion.objects.filter(date=date.today()).first()
         answer = request.data.get("answer")
         correct = question.correct_answer == answer
@@ -147,9 +133,50 @@ class FinanceQuestionView(APIView):
             question=question, 
             answer=answer, 
             correct=correct, 
-            user=coin
+            user=game_session
         )
 
         return Response({"correct_answer": question.correct_answer, "explanation": question.explanation}, status=status.HTTP_200_OK)
 
+
+class SituationAnswerView(APIView):
+    """
+    API view to get a situation answer
+    """
+    def post(self, request, session_id, coin_name, situation_id):
+        game_session = get_object_or_404(GameSession, session_id=session_id)
+        coin = get_object_or_404(GameCoin, game_session=game_session, coin_name=coin_name)
+        # Get the situation and ensure it belongs to this coin's value history
+        situation = get_object_or_404(Situation, id=situation_id)
+        if situation.coin_value_history.coin != coin:
+            return Response({"error": "Situation does not belong to this coin"}, status=status.HTTP_400_BAD_REQUEST)
+
+        request_choice = request.data.get("choice")
         
+        for choice in situation.choices:
+            if choice["id"] == request_choice:
+                # Update the situation with the selected choice
+                situation.selected_choice = request_choice
+                situation.save()
+                
+                # Create a new historical record with the updated value
+                new_value = float(choice["updated_value"])
+                CoinValueHistory.objects.create(
+                    coin=coin,
+                    timestamp=timezone.now(),
+                    value=coin.current_value
+                )
+                
+                # Update the coin's current value
+                coin.current_value = new_value
+                coin.save()
+                
+                return Response(
+                    {"consequence": choice["consequence"]},
+                    status=status.HTTP_200_OK
+                )
+
+        return Response(
+            {"error": "Invalid choice selected"},
+            status=status.HTTP_400_BAD_REQUEST
+        )

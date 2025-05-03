@@ -33,6 +33,7 @@ class CoinValueHistory(models.Model):
             models.Index(fields=["coin", "timestamp"]),
         ]
         ordering = ["-timestamp"]
+        get_latest_by = "timestamp"
 
 
 class FinanceQuestion(models.Model):
@@ -68,17 +69,8 @@ class Situation(models.Model):
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # Choice A
-    choice_a_text = models.TextField()
-    choice_a_consequence = models.TextField()
-    choice_a_new_value = models.FloatField()
+    choices = models.JSONField()
 
-    # Choice B
-    choice_b_text = models.TextField()
-    choice_b_consequence = models.TextField()
-    choice_b_new_value = models.FloatField()
-
-    # Track which choice was made (if any)
     selected_choice = models.CharField(
         max_length=1, choices=[("A", "A"), ("B", "B")], null=True, blank=True
     )
