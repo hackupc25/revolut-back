@@ -18,6 +18,22 @@ class GameCoin(models.Model):
     coin_name = models.CharField(max_length=100)
 
 
+class GamePlayer(models.Model):
+    """Model to track a player in a game session."""
+
+    game_session = models.ForeignKey(
+        GameSession,
+        related_name="players",
+        on_delete=models.CASCADE
+    )
+    name = models.CharField(max_length=100)
+    coin = models.ForeignKey(
+        GameCoin,
+        related_name="players",
+        on_delete=models.CASCADE
+    )
+
+
 class CoinValueHistory(models.Model):
     """Model to track historical values of a coin over time."""
 
