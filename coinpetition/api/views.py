@@ -111,7 +111,7 @@ class FinanceQuestionView(APIView):
     """
     API view to get a finance question
     """
-    def get(self, request, session_id):
+    def get(self, request, session_id, coin_name):
         game_session = get_object_or_404(GameSession, session_id=session_id)
         question = FinanceQuestion.objects.filter(date=date.today()).first()
         if not question:
@@ -134,10 +134,11 @@ class FinanceQuestionView(APIView):
                 explanation=question_data["explanation"]
             )
 
-        return Response({"question": question.question, "options": question.options}, status=status.HTTP_200_OK)
+        return Response({"question": question.question, "answers": question.options}, status=status.HTTP_200_OK)
     
-    def post(self, request, session_id):
+    def post(self, request, session_id, coin_name):
         game_session = get_object_or_404(GameSession, session_id=session_id)
+        coin = get_object_or_404(GameCoin, game_session=game_session, coin_name=coin_name)
         question = FinanceQuestion.objects.filter(date=date.today()).first()
         answer = request.data.get("answer")
         correct = question.correct_answer == answer
@@ -146,7 +147,7 @@ class FinanceQuestionView(APIView):
             question=question, 
             answer=answer, 
             correct=correct, 
-            user=game_session
+            user=coin
         )
 
         return Response({"correct_answer": question.correct_answer, "explanation": question.explanation}, status=status.HTTP_200_OK)
