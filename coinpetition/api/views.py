@@ -10,10 +10,10 @@ from .models import (
     GameSession, GameCoin, FinanceQuestion, FinanceQuestionAnswer,
     Situation, CoinValueHistory, GamePlayer
 )
-from .serializers import GameSessionSerializer
+from .serializers import GameSessionSerializer, GamePlayerSerializer
 from coinpetition.finance_question_generator import generate_question
 from .utils.game_situation_generator import get_game_situation
-
+from .utils.generate_test_data import generate_test_data
 
 class GameSessionView(APIView):
     """
@@ -35,6 +35,9 @@ class GameSessionView(APIView):
                 coin_name=player["coin_name"],
                 game_session=game_session
             )
+
+            generate_test_data(coin)
+
             GamePlayer.objects.create(name=player["player_name"], coin=coin, game_session=game_session)
         
         return Response({"session_id": game_session.session_id}, status=status.HTTP_200_OK)
@@ -183,3 +186,13 @@ class SituationAnswerView(APIView):
             {"error": "Invalid choice selected"},
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+
+class UserView(APIView):
+    """
+    API view to get a user
+    """
+    def get(self, request, name):
+        player = get_object_or_404(GamePlayer, name=name)
+        serializer = GamePlayerSerializer(player)
+        return Response(serializer.data, status=status.HTTP_200_OK)
