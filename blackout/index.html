@@ -5,6 +5,17 @@
     <title>Blackout App</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
     <style>
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                opacity: 1;
+                box-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700, 0 0 30px #FFD700;
+            }
+            20%, 24%, 55% {
+                opacity: 0.5;
+                box-shadow: 0 0 5px #FFD700, 0 0 10px #FFD700, 0 0 15px #FFD700;
+            }
+        }
+
         html, body {
             margin: 0;
             padding: 0;
@@ -12,7 +23,6 @@
             background: #000;
             font-family: 'Orbitron', sans-serif;
             color: #FFD700;
-            overflow: hidden;
             cursor: none;
         }
 
@@ -46,10 +56,7 @@
         }
 
         .container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            margin: 2em auto;
             text-align: center;
             z-index: 10;
             width: 80%;
@@ -60,7 +67,31 @@
             margin-bottom: 1em;
         }
 
-        label, select, input, button {
+        select {
+            display: block;
+            margin: 1em auto;
+            font-size: 1.2em;
+            background: none;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 0.5em 1em;
+            border-radius: 10px;
+            margin-bottom: 3em;
+        }
+
+        button {
+            display: block;
+            margin: 1em auto;
+            font-size: 1.2em;
+            background: none;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 0.5em 1em;
+            border-radius: 10px;
+            margin-bottom: 4em;
+        }
+
+        input {
             display: block;
             margin: 1em auto;
             font-size: 1.2em;
@@ -71,7 +102,19 @@
             border-radius: 10px;
         }
 
+        output {
+            margin-bottom: 2em;
+        }
+
         label {
+            display: block;
+            margin: 1em auto;
+            font-size: 1.2em;
+            color: #FFD700;
+            text-align: center;
+            animation: none;
+            border: none;
+            background: none;
             width: 20%;
         }
 
@@ -88,18 +131,41 @@
         }
 
         .light-message {
-            background-color: #FFD700; /* Fondo amarillo */
-            color: black; /* Letras negras */
+            background-color: #FFD700;
+            color: black;
             font-size: 1.2em;
-            margin: 1em auto; /* Centrado horizontal */
+            margin: 1em auto;
             padding: 1em;
             border-radius: 10px;
-            text-align: left; /* Alineación del texto */
-            box-shadow: 0 0 20px #FFD700; /* Efecto de brillo */
-            z-index: 2000; /* Asegurarse de que esté por encima de otros elementos */
-            position: relative; /* No afecta al desplazamiento */
-            max-width: 80%; /* Limitar el ancho del mensaje */
-            word-wrap: break-word; /* Ajustar texto largo */
+            text-align: left;
+            box-shadow: 0 0 20px #FFD700;
+            z-index: 2000;
+            position: relative;
+            max-width: 80%;
+            word-wrap: break-word;
+            animation: flicker 1s infinite;
+        }
+
+        .intro-quote {
+            font-size: 1em;
+            color:white;
+            margin-bottom: 1em;
+            font-style: italic;
+            text-align: center;
+        }
+
+        .intro-quote-welcome {
+            font-size: 1.5em;
+            color: white;
+            margin-bottom: 1em;
+            text-align: center;
+        }
+
+        .intro-quote-description {
+            font-size: 1em;
+            color: white;
+            margin-bottom: 5em;
+            text-align: center;
         }
         
     </style>
@@ -107,7 +173,11 @@
 <body>
     <div class="container">
         <h1>BLACKOUT</h1>
-        <label for="usuario">Select a user:</label>
+        <p class="intro-quote">In the darkest times, even the smallest light can guide the way</p>
+        <p class="intro-quote-welcome">Welcome to the Cash Savings Predictor</p>
+        <p class="intro-quote-description">Plan ahead and ensure you're ready for any blackout</p>
+
+        <label for="usuario">Select a user</label>
         <select id="usuario">
             <option>1</option>
             <option>2</option>
@@ -116,7 +186,7 @@
             <option>5</option>
         </select>
 
-        <label for="dias">Days of simulation:</label>
+        <label for="dias">Days of simulation</label>
         <input type="range" id="dias" min="1" max="7" value="3" oninput="this.nextElementSibling.value = this.value">
         <output>3</output>
 

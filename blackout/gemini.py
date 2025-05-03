@@ -22,7 +22,7 @@ def generate_cash_plan(transactions, duration_days=3):
     2. Briefly explain how you calculated it
     3. Highlight the most important spending categories during such a scenario
 
-    Be concise, realistic, and helpful.
+    Be concise, realistic, and helpful. Do not give it in markdown format. Make the text readable so I can print it on a HTML paragraph.
     """
     response = model.generate_content(prompt)
     return response.text
