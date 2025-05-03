@@ -33,12 +33,11 @@ class GameSessionView(APIView):
         for player in players:
             coin = GameCoin.objects.create(
                 coin_name=player["coin_name"],
-                game_session=game_session,
-                current_value=1.0
+                game_session=game_session
             )
             GamePlayer.objects.create(name=player["player_name"], coin=coin, game_session=game_session)
         
-        return redirect(f"/game/{game_session.session_id}/")
+        return Response({"session_id": game_session.session_id}, status=status.HTTP_200_OK)
     
 
 
