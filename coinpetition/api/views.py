@@ -34,13 +34,13 @@ class CoinSituationView(APIView):
         coin = get_object_or_404(
             GameCoin, game_session=game_session, coin_name=coin_name
         )
+        current_value = CoinValueHistory.objects.filter(coin=coin).order_by("-timestamp").first().value
 
         # Use the game situation generator
         situation_data = get_game_situation(
             coin_name=coin.coin_name,
-            coin_value=coin.current_value,
+            coin_value=current_value,
         )
-        print(situation_data)
 
         # Convert Gemini model objects to standard Python data types
         serializable_choices = []
@@ -52,18 +52,8 @@ class CoinSituationView(APIView):
                 "updated_value": float(choice["updated_value"]),
             })
 
-        # Get the latest value history or create one if it doesn't exist
-        # first() because ordering is already by -timestamp
-        latest_value_history = coin.value_history.first()
-        if not latest_value_history:
-            # If no history exists, create one with the current timestamp
-            latest_value_history = coin.value_history.create(
-                timestamp=timezone.now(),
-                value=coin.current_value
-            )
-
         situation = Situation.objects.create(
-            coin_value_history=latest_value_history,
+            coin=coin,
             category=str(situation_data["category"]),
             description=str(situation_data["situation"]),
             choices=serializable_choices
@@ -143,13 +133,9 @@ class SituationAnswerView(APIView):
     """
     API view to get a situation answer
     """
-    def post(self, request, session_id, coin_name, situation_id):
-        game_session = get_object_or_404(GameSession, session_id=session_id)
-        coin = get_object_or_404(GameCoin, game_session=game_session, coin_name=coin_name)
+    def post(self, request, situation_id):
         # Get the situation and ensure it belongs to this coin's value history
         situation = get_object_or_404(Situation, id=situation_id)
-        if situation.coin_value_history.coin != coin:
-            return Response({"error": "Situation does not belong to this coin"}, status=status.HTTP_400_BAD_REQUEST)
 
         request_choice = request.data.get("choice")
         
@@ -162,14 +148,10 @@ class SituationAnswerView(APIView):
                 # Create a new historical record with the updated value
                 new_value = float(choice["updated_value"])
                 CoinValueHistory.objects.create(
-                    coin=coin,
+                    coin=situation.coin,
                     timestamp=timezone.now(),
-                    value=coin.current_value
+                    value=new_value
                 )
-                
-                # Update the coin's current value
-                coin.current_value = new_value
-                coin.save()
                 
                 return Response(
                     {"consequence": choice["consequence"]},

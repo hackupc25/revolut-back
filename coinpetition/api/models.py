@@ -16,7 +16,6 @@ class GameCoin(models.Model):
         GameSession, related_name="coins", on_delete=models.CASCADE
     )
     coin_name = models.CharField(max_length=100)
-    current_value = models.FloatField(default=0.0)
 
 
 class CoinValueHistory(models.Model):
@@ -62,8 +61,8 @@ class FinanceQuestionAnswer(models.Model):
 class Situation(models.Model):
     """Model to track situations linked to coin value history."""
 
-    coin_value_history = models.ForeignKey(
-        CoinValueHistory, related_name="situations", on_delete=models.CASCADE
+    coin = models.ForeignKey(
+        GameCoin, related_name="situations", on_delete=models.CASCADE
     )
     category = models.CharField(max_length=50)
     description = models.TextField()
@@ -77,6 +76,6 @@ class Situation(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["coin_value_history", "created_at"]),
+            models.Index(fields=["coin", "created_at"]),
         ]
         ordering = ["-created_at"]
