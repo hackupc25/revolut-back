@@ -12,7 +12,7 @@ def generate_test_data(coin: GameCoin):
     
     value = round(random.uniform(80.0, 120.0), 2)
     
-    for day in range(30):
+    for day in range(1, 30):
         # Calculate the date for this data point
         record_date = end_date - timedelta(days=day)
         
@@ -32,3 +32,8 @@ def generate_test_data(coin: GameCoin):
             timestamp=record_date,
             value=rounded_value
         )
+    CoinValueHistory.objects.create(
+        coin=coin,
+        timestamp=end_date,
+        value=100.0
+    )

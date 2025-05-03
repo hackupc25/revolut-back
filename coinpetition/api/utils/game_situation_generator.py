@@ -103,7 +103,6 @@ class SituationGenerator:
     @staticmethod
     def parse_response(response) -> dict:
         # Extract function call from the response
-        print(response.candidates[0].content.parts)
         function_call = response.candidates[0].content.parts[0].function_call
         return {
             "situation": function_call.args["situation"],
@@ -142,8 +141,7 @@ class SituationGenerator:
             For each choice, you MUST provide:
             1. A text description of the choice
             2. A consequence description
-            3. An updated_value as a number (positive or negative) representing how this 
-               choice affects the coin's value
+            3. An updated_value as the new number that the coin's value will be. It can only be positive and vary a +-20% at most.
 
             Keep the tone similar to REIGNS - sometimes serious, sometimes 
             absurd or unexpected.
@@ -182,7 +180,7 @@ class SituationGenerator:
         For each choice, you MUST provide:
         1. A text description of the choice
         2. A consequence description
-        3. An updated_value as the new number that the coin's value will be. It can only be positive.
+        3. An updated_value as the new number that the coin's value will be. It can only be positive and vary a +-20% at most.
            
         Keep the tone similar to REIGNS - sometimes serious, sometimes absurd 
         or unexpected.

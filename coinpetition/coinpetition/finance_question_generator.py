@@ -59,7 +59,6 @@ def generate_question() -> str:
 
         # Process the response based on the Gemini API structure
         result = response.json()
-        print(result)
         # Expected structure: {"candidates": [{"content": {"parts": [{"text": "..."}]}}]}
         if (
             result
