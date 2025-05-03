@@ -231,11 +231,11 @@
         <label for="usuario">Step 1: select a user</label>
         <select id="usuario" onchange="fetchTransactions()">
             <option value="" disabled selected>Select a user</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
+            <option value="adventurous">adventurous</option>
+            <option value="familiar">familiar</option>
+            <option value="miserly">miserly</option>
+            <option value="student">student</option>
+            <option value="wasteful">wasteful</option>
         </select>
 
         <div id="transactions" class="transactions">
@@ -271,7 +271,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        user_id: usuario,
+                        filename: usuario,
                         duration_days: dias,
                     }),
                 });

@@ -14,10 +14,10 @@ def home():
 @app.route('/generate', methods=['POST'])
 def generate():
     data = request.json
-    user_id = data.get('user_id')
+    filename = data.get('filename')
     duration_days = data.get('duration_days', 3)
     try:
-        result = main(user_id, duration_days)
+        result = main(filename, duration_days)
         return jsonify({"success": True, "result": result})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -34,7 +34,7 @@ def get_transactions():
 
     # Path to the datasets/users folder
     base_path = os.path.join(os.getcwd(), 'datasets', 'users')
-    file_path = os.path.join(base_path, f'user{user_id}.csv')
+    file_path = os.path.join(base_path, f'{user_id}.csv')
 
     # Check if the file exists
     if not os.path.exists(file_path):

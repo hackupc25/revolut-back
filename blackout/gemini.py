@@ -27,8 +27,8 @@ def generate_cash_plan(transactions, duration_days=3):
     response = model.generate_content(prompt)
     return response.text
 
-def load_user_csv(user_id):
-    filename = f"./datasets/users/user{user_id}.csv"
+def load_user_csv(filename):
+    filename = f"./datasets/users/{filename}.csv"
     df = pd.read_csv(filename)
     transaction_str = "\n".join(
         f"{row['date']} - {row['category']} - €{row['amount']}"
@@ -36,7 +36,7 @@ def load_user_csv(user_id):
     )
     return transaction_str
 
-def main(user_id, duration_days=3):
-    transactions = load_user_csv(user_id)
+def main(filename, duration_days=3):
+    transactions = load_user_csv(filename)
     result = generate_cash_plan(transactions, duration_days)
     return result
