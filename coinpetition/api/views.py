@@ -8,6 +8,8 @@ from json import loads
 from .models import GameSession, GameCoin, FinanceQuestion
 from .serializers import GameSessionSerializer, FinanceQuestionSerializer
 from coinpetition.finance_question_generator import generate_question
+from .utils.game_situation_generator import GameState, generate_situation, parse_situation_response
+
 
 class GameSessionView(APIView):
     """
@@ -25,17 +27,36 @@ class CoinSituationView(APIView):
     """
     def get(self, request, session_id, coin_name):
         game_session = get_object_or_404(GameSession, session_id=session_id)
-        coin = get_object_or_404(GameCoin, game_session=game_session, coin_name=coin_name)
+        coin = get_object_or_404(
+            GameCoin, game_session=game_session, coin_name=coin_name
+        )
         
-        # Dummy implementation - will be replaced later
-        situation = {
+        # Use game situation generator to create a relevant situation
+        game_state = GameState(coin.coin_name, coin.current_value)
+        situation_text = generate_situation(game_state)
+        situation, category, choice_a, choice_b = parse_situation_response(
+            situation_text
+        )
+        
+        response_data = {
             "coin_name": coin.coin_name,
-            "event_type": "price_movement",
-            "description": "The coin value is increasing rapidly due to market demand!",
-            "impact": "positive"
+            "situation": situation,
+            "category": category,
+            "choices": [
+                {
+                    "id": "A",
+                    "text": choice_a.get("text", ""),
+                    "consequence": choice_a.get("consequence", "")
+                },
+                {
+                    "id": "B",
+                    "text": choice_b.get("text", ""),
+                    "consequence": choice_b.get("consequence", "")
+                }
+            ]
         }
         
-        return Response(situation)
+        return Response(response_data)
     
 
 class FinanceQuestionView(APIView):
