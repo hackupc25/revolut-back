@@ -32,8 +32,9 @@ class FinanceQuestionSerializer(serializers.ModelSerializer):
 
 class GamePlayerSerializer(serializers.ModelSerializer):
     session_id = serializers.ReadOnlyField(source='game_session.session_id')
+    coin_name = serializers.ReadOnlyField(source='coin.coin_name')
 
     class Meta:
         model = GamePlayer
-        fields = ['name', 'coin', 'session_id']
+        fields = ['name', 'coin_name', 'session_id']
 
