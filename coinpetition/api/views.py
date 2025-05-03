@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from datetime import date
 from json import loads
 from django.utils import timezone
+import numpy as np
 from uuid import uuid4
 from .models import (
     GameSession, GameCoin, FinanceQuestion, FinanceQuestionAnswer,
@@ -151,6 +152,16 @@ class FinanceQuestionView(APIView):
             answer=answer, 
             correct=correct, 
             user=coin
+        )
+
+        last_value = CoinValueHistory.objects.filter(coin=coin).order_by("-timestamp").first().value
+        factor = np.random.normal(0.1, 0.3)
+        new_value = last_value * (1 + (factor if correct else -factor))
+        new_value = max(0.01, min(new_value, 100000))
+        CoinValueHistory.objects.create(
+            coin=coin,
+            timestamp=timezone.now(),
+            value=new_value
         )
 
         return Response({"correct_answer": question.correct_answer, "explanation": question.explanation}, status=status.HTTP_200_OK)
