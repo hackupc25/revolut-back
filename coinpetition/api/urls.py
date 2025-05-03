@@ -1,9 +1,7 @@
 from django.urls import path
-from .views import NewGameView, GenerateSituationView, MakeChoiceView, GameStateView
+from .views import GameSessionView, CoinSituationView
 
 urlpatterns = [
-    path('game/new/', NewGameView.as_view(), name='new_game'),
-    path('game/situation/', GenerateSituationView.as_view(), name='generate_situation'),
-    path('game/choice/', MakeChoiceView.as_view(), name='make_choice'),
-    path('game/state/<str:session_id>/', GameStateView.as_view(), name='game_state'),
-] 
+    path('game/<str:session_id>/', GameSessionView.as_view(), name='game_session'),
+    path('game/<str:session_id>/coin/<str:coin_name>/get_situation/', CoinSituationView.as_view(), name='coin_situation'),
+]
