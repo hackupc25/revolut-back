@@ -76,7 +76,9 @@
             border: 2px solid #FFD700;
             padding: 0.5em 1em;
             border-radius: 10px;
-            margin-bottom: 3em;
+            margin-bottom: 1em;
+            text-align: center;
+            width: 10%;
         }
 
         button {
@@ -109,13 +111,14 @@
         label {
             display: block;
             margin: 1em auto;
-            font-size: 1.2em;
+            font-size: 1.5em;
             color: #FFD700;
             text-align: center;
             animation: none;
             border: none;
             background: none;
-            width: 20%;
+            width: 40%;
+            text-decoration: underline;
         }
 
         button:hover {
@@ -167,6 +170,54 @@
             margin-bottom: 5em;
             text-align: center;
         }
+
+        .transactions table {
+            width: 100%;
+            table-layout: auto;
+            border-collapse: collapse;
+            margin-top: 1em;
+        }
+
+        .transactions th, .transactions td {
+            border: 1px solid #FFD700;
+            padding: 0.5em;
+            text-align: center;
+            color: #FFD700;
+            max-width: 10px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .transactions th {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .transactions th:nth-child(1), .transactions td:nth-child(1) {
+            width: 5%;
+        }
+
+        .transactions th:nth-child(2), .transactions td:nth-child(2) {
+            width: 5%;
+        }
+
+        .transactions th:nth-child(3), .transactions td:nth-child(3) {
+            width: 5%;
+        }
+
+        button.view-more {
+            margin-top: 1em;
+            padding: 0.5em 1em;
+            border: 2px solid #FFD700;
+            background: none;
+            color: #FFD700;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button.view-more:hover {
+            background-color: #FFD700;
+            color: black;
+        }
         
     </style>
 </head>
@@ -177,16 +228,21 @@
         <p class="intro-quote-welcome">Welcome to the Cash Savings Predictor</p>
         <p class="intro-quote-description">Plan ahead and ensure you're ready for any blackout</p>
 
-        <label for="usuario">Select a user</label>
-        <select id="usuario">
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4</option>
-            <option>5</option>
+        <label for="usuario">Step 1: select a user</label>
+        <select id="usuario" onchange="fetchTransactions()">
+            <option value="" disabled selected>Select a user</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
         </select>
 
-        <label for="dias">Days of simulation</label>
+        <div id="transactions" class="transactions">
+            
+        </div>
+
+        <label for="dias">Step 2: select the days of simulation</label>
         <input type="range" id="dias" min="1" max="7" value="3" oninput="this.nextElementSibling.value = this.value">
         <output>3</output>
 
@@ -233,6 +289,76 @@
                 }
             } catch (error) {
                 document.getElementById("response").innerText = `Error: ${error.message}`;
+            }
+        }
+
+        async function fetchTransactions() {
+            const userId = document.getElementById("usuario").value;
+
+            if (!userId) return;
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/transactions?user_id=${userId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const transactionsDiv = document.getElementById("transactions");
+                    const transactions = data.transactions;
+
+                    // Display the first 5 transactions
+                    const initialTransactions = transactions.slice(0, 5);
+                    transactionsDiv.innerHTML = `
+                        <h3>Transactions for User ${userId}</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-body">
+                                ${initialTransactions.map(tx => `
+                                    <tr>
+                                        <td>${tx.category}</td>
+                                        <td>${tx.date}</td>
+                                        <td>${tx.amount}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+
+                    // Add "View More" button if there are more than 5 transactions
+                    if (transactions.length > 5) {
+                        const viewMoreButton = document.createElement('button');
+                        viewMoreButton.innerText = 'View More';
+                        viewMoreButton.className = 'view-more';
+                        viewMoreButton.style.marginTop = '1em';
+
+                        // Add click event to show the remaining transactions
+                        viewMoreButton.onclick = () => {
+                            const remainingTransactions = transactions.slice(5);
+                            const transactionsBody = document.getElementById('transactions-body');
+                            remainingTransactions.forEach(tx => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${tx.category}</td>
+                                    <td>${tx.date}</td>
+                                    <td>${tx.amount}</td>
+                                `;
+                                transactionsBody.appendChild(row);
+                            });
+                            viewMoreButton.remove(); // Remove the button after showing all transactions
+                        };
+
+                        transactionsDiv.appendChild(viewMoreButton);
+                    }
+                } else {
+                    document.getElementById("transactions").innerText = `Error: ${data.error}`;
+                }
+            } catch (error) {
+                document.getElementById("transactions").innerText = `Error: ${error.message}`;
             }
         }
     </script>
