@@ -143,21 +143,21 @@ class SituationAnswerView(APIView):
     """
     API view to get a situation answer
     """
-    def post(self, request, session_id, situation_id):
+    def post(self, request, session_id, coin_name, situation_id):
+        game_session = get_object_or_404(GameSession, session_id=session_id)
+        coin = get_object_or_404(GameCoin, game_session=game_session, coin_name=coin_name)
+        # Get the situation and ensure it belongs to this coin's value history
         situation = get_object_or_404(Situation, id=situation_id)
+        if situation.coin_value_history.coin != coin:
+            return Response({"error": "Situation does not belong to this coin"}, status=status.HTTP_400_BAD_REQUEST)
+
         request_choice = request.data.get("choice")
-        print(request_choice)
-        print(situation.choices)
         
         for choice in situation.choices:
             if choice["id"] == request_choice:
                 # Update the situation with the selected choice
                 situation.selected_choice = request_choice
                 situation.save()
-                
-                # Get the associated coin through the value history
-                coin_value_history = situation.coin_value_history
-                coin = coin_value_history.coin
                 
                 # Create a new historical record with the updated value
                 new_value = float(choice["updated_value"])
