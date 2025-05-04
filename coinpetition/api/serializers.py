@@ -10,10 +10,19 @@ class CoinValueHistorySerializer(serializers.ModelSerializer):
 
 class GameCoinSerializer(serializers.ModelSerializer):
     value_history = CoinValueHistorySerializer(many=True, read_only=True)
+    image = serializers.SerializerMethodField()
     
     class Meta:
         model = GameCoin
-        fields = ['coin_name', 'value_history']
+        fields = ['coin_name', 'description', 'image', 'value_history']
+    
+    def get_image(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
 
 
 class GameSessionSerializer(serializers.ModelSerializer):

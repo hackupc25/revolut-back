@@ -16,6 +16,8 @@ class GameCoin(models.Model):
         GameSession, related_name="coins", on_delete=models.CASCADE
     )
     coin_name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to='coin_images/', blank=True, null=True)
 
 
 class GamePlayer(models.Model):
