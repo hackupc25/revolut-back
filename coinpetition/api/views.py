@@ -14,7 +14,11 @@ from .models import (
 from .serializers import GameSessionSerializer, GamePlayerSerializer
 from coinpetition.finance_question_generator import generate_question
 from .utils.game_situation_generator import get_game_situation
+from .utils.situation_summary_generator import get_situation_summary
 from .utils.generate_test_data import generate_test_data
+from .utils.image_generator import generate_coin_image
+from .utils.generate_coin_vision import generate_coin_vision
+
 
 class GameSessionView(APIView):
     """
@@ -22,7 +26,7 @@ class GameSessionView(APIView):
     """
     def get(self, request, session_id):
         game_session = get_object_or_404(GameSession, session_id=session_id)
-        serializer = GameSessionSerializer(game_session)
+        serializer = GameSessionSerializer(game_session, context={'request': request})
         return Response(serializer.data)
     
     def post(self, request):
@@ -32,12 +36,32 @@ class GameSessionView(APIView):
         uuid = uuid4()
         game_session = GameSession.objects.create(session_id=uuid)
         for player in players:
+            # Generate description
+            coin_description = "A unique cryptocurrency named " + player["coin_name"] + ", with this characteristics: " + player.get("coin_description", "Black and golden color, with a unique design.")
+            
+            # Generate enhanced description with vision using Gemini
+            enhanced_description = generate_coin_vision(
+                coin_description
+            )
+            
+            # Create the coin with the enhanced description
             coin = GameCoin.objects.create(
                 coin_name=player["coin_name"],
+                description=enhanced_description,
                 game_session=game_session
             )
-
+            
+            # Generate test data for the coin
             generate_test_data(coin)
+            
+            # Generate and save image
+            image_file = generate_coin_image(
+                player["coin_name"], 
+                coin_description
+            )
+            if image_file:
+                coin.image = image_file
+                coin.save()
 
             GamePlayer.objects.update_or_create(
                 name=player["player_name"], 
@@ -208,3 +232,34 @@ class UserView(APIView):
         player = get_object_or_404(GamePlayer, name=name)
         serializer = GamePlayerSerializer(player)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CoinSituationSummaryView(APIView):
+    """
+    API view to get a summary of past situations for a specific coin
+    """
+    def get(self, request, session_id, coin_name):
+        game_session = get_object_or_404(GameSession, session_id=session_id)
+        coin = get_object_or_404(
+            GameCoin, game_session=game_session, coin_name=coin_name
+        )
+        
+        # Get situation summary
+        max_situations = request.query_params.get('max_situations', 5)
+        try:
+            max_situations = int(max_situations)
+            max_situations = min(max_situations, 5)  # Limit to 5 at most
+        except (ValueError, TypeError):
+            max_situations = 5
+        summary = get_situation_summary(
+            coin_name=coin.coin_name,
+            coin_id=coin.id,
+            max_situations=max_situations
+        )
+        
+        response_data = {
+            "coin_name": coin.coin_name,
+            "summary": summary
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
