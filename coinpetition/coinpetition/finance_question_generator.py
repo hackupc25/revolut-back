@@ -1,15 +1,15 @@
 import requests
 import os
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 API_ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash"
 
 def generate_question() -> str:
     """Calls the Google Gemini API to generate content."""
-    if not GEMINI_API_KEY:
-        return "Error: GEMINI_API_KEY not configured. Please set the environment variable."
+    if not GOOGLE_API_KEY:
+        return "Error: GOOGLE_API_KEY not configured. Please set the environment variable."
 
-    api_url = f"{API_ENDPOINT_BASE}:generateContent?key={GEMINI_API_KEY}"
+    api_url = f"{API_ENDPOINT_BASE}:generateContent?key={GOOGLE_API_KEY}"
 
     prompt = """
             You are a financial education expert designing a multiple-choice question for a daily quiz game where friends compete to test their financial knowledge.
