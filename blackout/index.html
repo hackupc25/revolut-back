@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Blackout App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+    <style>
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                opacity: 1;
+                box-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700, 0 0 30px #FFD700;
+            }
+            20%, 24%, 55% {
+                opacity: 0.5;
+                box-shadow: 0 0 5px #FFD700, 0 0 10px #FFD700, 0 0 15px #FFD700;
+            }
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: #000;
+            font-family: 'Orbitron', sans-serif;
+            color: #FFD700;
+            cursor: none;
+        }
+
+        .spotlight {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            pointer-events: none;
+            background: radial-gradient(
+                ellipse 30vmax 25vmax at var(--cursorX, 50vw) var(--cursorY, 50vh),
+                rgba(255, 255, 200, 0.05) 0%,
+                rgba(0, 0, 0, 0.6) 50%,
+                rgba(0, 0, 0, 0.98) 100%
+            );
+            z-index: 1000;
+            transition: background 0.1s;
+        }
+
+        .beam {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+            border-left: 1px solid rgba(255, 255, 150, 0.1);
+            border-right: 1px solid rgba(255, 255, 150, 0.1);
+            z-index: 999;
+        }
+
+        .container {
+            margin: 2em auto;
+            text-align: center;
+            z-index: 10;
+            width: 80%;
+        }
+
+        h1 {
+            font-size: 4em;
+            margin-bottom: 1em;
+        }
+
+        select {
+            display: block;
+            margin: 1em auto;
+            font-size: 1.2em;
+            background: none;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 0.5em 1em;
+            border-radius: 10px;
+            margin-bottom: 1em;
+            text-align: center;
+            width: 10%;
+        }
+
+        button {
+            display: block;
+            margin: 1em auto;
+            font-size: 1.2em;
+            background: none;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 0.5em 1em;
+            border-radius: 10px;
+            margin-bottom: 4em;
+        }
+
+        input {
+            display: block;
+            margin: 1em auto;
+            font-size: 1.2em;
+            background: none;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 0.5em 1em;
+            border-radius: 10px;
+        }
+
+        output {
+            margin-bottom: 2em;
+        }
+
+        label {
+            display: block;
+            margin: 1em auto;
+            font-size: 1.5em;
+            color: #FFD700;
+            text-align: center;
+            animation: none;
+            border: none;
+            background: none;
+            width: 40%;
+            text-decoration: underline;
+        }
+
+        button:hover {
+            background-color: #FFD700;
+            color: black;
+            cursor: pointer;
+        }
+
+        output {
+            display: block;
+            font-size: 1.5em;
+            margin-top: 1em;
+        }
+
+        .light-message {
+            background-color: #FFD700;
+            color: black;
+            font-size: 1.2em;
+            margin: 1em auto;
+            padding: 1em;
+            border-radius: 10px;
+            text-align: left;
+            box-shadow: 0 0 20px #FFD700;
+            z-index: 2000;
+            position: relative;
+            max-width: 80%;
+            word-wrap: break-word;
+            animation: flicker 1s infinite;
+        }
+
+        .intro-quote {
+            font-size: 1em;
+            color:white;
+            margin-bottom: 1em;
+            font-style: italic;
+            text-align: center;
+        }
+
+        .intro-quote-welcome {
+            font-size: 1.5em;
+            color: white;
+            margin-bottom: 1em;
+            text-align: center;
+        }
+
+        .intro-quote-description {
+            font-size: 1em;
+            color: white;
+            margin-bottom: 5em;
+            text-align: center;
+        }
+
+        .transactions table {
+            width: 100%;
+            table-layout: auto;
+            border-collapse: collapse;
+            margin-top: 1em;
+        }
+
+        .transactions th, .transactions td {
+            border: 1px solid #FFD700;
+            padding: 0.5em;
+            text-align: center;
+            color: #FFD700;
+            max-width: 10px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .transactions th {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .transactions th:nth-child(1), .transactions td:nth-child(1) {
+            width: 5%;
+        }
+
+        .transactions th:nth-child(2), .transactions td:nth-child(2) {
+            width: 5%;
+        }
+
+        .transactions th:nth-child(3), .transactions td:nth-child(3) {
+            width: 5%;
+        }
+
+        button.view-more {
+            margin-top: 1em;
+            padding: 0.5em 1em;
+            border: 2px solid #FFD700;
+            background: none;
+            color: #FFD700;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button.view-more:hover {
+            background-color: #FFD700;
+            color: black;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BLACKOUT</h1>
+        <p class="intro-quote">In the darkest times, even the smallest light can guide the way</p>
+        <p class="intro-quote-welcome">Welcome to the Cash Savings Predictor</p>
+        <p class="intro-quote-description">Plan ahead and ensure you're ready for any blackout</p>
+
+        <label for="usuario">Step 1: select a user</label>
+        <select id="usuario" onchange="fetchTransactions()">
+            <option value="" disabled selected>Select a user</option>
+            <option value="adventurous">adventurous</option>
+            <option value="familiar">familiar</option>
+            <option value="miserly">miserly</option>
+            <option value="student">student</option>
+            <option value="wasteful">wasteful</option>
+        </select>
+
+        <div id="transactions" class="transactions">
+            
+        </div>
+
+        <label for="dias">Step 2: select the days of simulation</label>
+        <input type="range" id="dias" min="1" max="7" value="3" oninput="this.nextElementSibling.value = this.value">
+        <output>3</output>
+
+        <button onclick="generarRecomendacion()">Generate cash recommendations</button>
+        <div id="response"></div>
+    </div>
+    <div class="spotlight"></div>
+
+    <script>
+        document.addEventListener('mousemove', function(e) {
+            const x = e.clientX;
+            const y = e.clientY;
+
+            document.documentElement.style.setProperty('--cursorX', x + 'px');
+            document.documentElement.style.setProperty('--cursorY', y + 'px');
+        });
+
+        async function generarRecomendacion() {
+            const usuario = document.getElementById("usuario").value;
+            const dias = document.getElementById("dias").value;
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        filename: usuario,
+                        duration_days: dias,
+                    }),
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById("response").innerHTML = `
+                        <div class="light-message">
+                            <p><strong>Now you see the light!</strong></p>
+                            <p>${data.result}</p>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById("response").innerText = `Error: ${data.error}`;
+                }
+            } catch (error) {
+                document.getElementById("response").innerText = `Error: ${error.message}`;
+            }
+        }
+
+        async function fetchTransactions() {
+            const userId = document.getElementById("usuario").value;
+
+            if (!userId) return;
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/transactions?user_id=${userId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const transactionsDiv = document.getElementById("transactions");
+                    const transactions = data.transactions;
+
+                    // Display the first 5 transactions
+                    const initialTransactions = transactions.slice(0, 5);
+                    transactionsDiv.innerHTML = `
+                        <h3>Transactions for User ${userId}</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-body">
+                                ${initialTransactions.map(tx => `
+                                    <tr>
+                                        <td>${tx.category}</td>
+                                        <td>${tx.date}</td>
+                                        <td>${tx.amount}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+
+                    // Add "View More" button if there are more than 5 transactions
+                    if (transactions.length > 5) {
+                        const viewMoreButton = document.createElement('button');
+                        viewMoreButton.innerText = 'View More';
+                        viewMoreButton.className = 'view-more';
+                        viewMoreButton.style.marginTop = '1em';
+
+                        // Add click event to show the remaining transactions
+                        viewMoreButton.onclick = () => {
+                            const remainingTransactions = transactions.slice(5);
+                            const transactionsBody = document.getElementById('transactions-body');
+                            remainingTransactions.forEach(tx => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${tx.category}</td>
+                                    <td>${tx.date}</td>
+                                    <td>${tx.amount}</td>
+                                `;
+                                transactionsBody.appendChild(row);
+                            });
+                            viewMoreButton.remove(); // Remove the button after showing all transactions
+                        };
+
+                        transactionsDiv.appendChild(viewMoreButton);
+                    }
+                } else {
+                    document.getElementById("transactions").innerText = `Error: ${data.error}`;
+                }
+            } catch (error) {
+                document.getElementById("transactions").innerText = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
