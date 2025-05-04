@@ -5,8 +5,9 @@ Utility to generate a vision statement for a coin using Google Gemini API.
 import google.generativeai as genai
 from typing import Dict
 
-# Use the same API key as in other files for consistency
-API_KEY = "AIzaSyDZyBoLtY9TKlrDQlEYWYf6H4mZKSv2Uj8"
+import os
+
+API_KEY = os.getenv("GOOGLE_API_KEY")
 FLASH_MODEL = "gemini-2.0-flash"
 
 # Configure the API

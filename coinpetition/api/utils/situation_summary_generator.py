@@ -1,8 +1,9 @@
 import google.generativeai as genai
 from typing import List
 from ..models import Situation
+import os
 
-API_KEY = "AIzaSyDZyBoLtY9TKlrDQlEYWYf6H4mZKSv2Uj8"
+API_KEY = os.getenv("GOOGLE_API_KEY")
 FLASH_MODEL = "gemini-2.0-flash"
 
 
@@ -14,6 +15,10 @@ class SituationSummaryGenerator:
         self._configure()
 
     def _configure(self):
+        # Only configure if API key is available
+        if not self.api_key:
+            raise ValueError("GOOGLE_API_KEY environment variable is not set")
+            
         genai.configure(api_key=self.api_key)
         self.model = genai.GenerativeModel(
             model_name=self.model_name,
@@ -68,7 +73,6 @@ class SituationSummaryGenerator:
         
         try:
             response = self.model.generate_content(prompt)
-            print(response.text.strip())
             return response.text.strip()
         except Exception as e:
             print(f"Error generating summary: {e}")
@@ -79,6 +83,13 @@ def get_situation_summary(
     coin_name: str, coin_id: int, max_situations: int = 5
 ) -> str:
     """Get a summary of past situations for the given coin."""
-    generator = SituationSummaryGenerator()
-    past_situations = generator.get_past_situations(coin_id, max_situations)
-    return generator.generate_summary(coin_name, past_situations) 
+    try:
+        generator = SituationSummaryGenerator()
+        past_situations = generator.get_past_situations(coin_id, max_situations)
+        return generator.generate_summary(coin_name, past_situations)
+    except ValueError as e:
+        print(f"API key error: {e}")
+        return "Unable to generate summary: API key not configured"
+    except Exception as e:
+        print(f"Error in get_situation_summary: {e}")
+        return f"Error generating summary for {coin_name}" 
