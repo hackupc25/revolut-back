@@ -1,17 +1,12 @@
 import requests
 import os
 
-# Placeholder for your Gemini API key and endpoint
-# Consider using environment variables for sensitive information
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "YOUR_GEMINI_API_KEY")
-# Note: The model name is part of the endpoint path
-API_ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash" # Using 1.5 flash as 2.0 is not a public model
-
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+API_ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash"
 
 def generate_question() -> str:
     """Calls the Google Gemini API to generate content."""
-    GEMINI_API_KEY = "AIzaSyCwrieg-4Uqj96cIm3jbLT2kP7oH3WHmEc"
-    if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY":
+    if not GEMINI_API_KEY:
         return "Error: GEMINI_API_KEY not configured. Please set the environment variable."
 
     api_url = f"{API_ENDPOINT_BASE}:generateContent?key={GEMINI_API_KEY}"

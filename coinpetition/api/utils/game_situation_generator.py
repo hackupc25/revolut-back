@@ -3,8 +3,9 @@ from typing import List, Any, TypedDict
 import random
 from .game_data import TARGETS, AREAS, EVENT_TYPES
 from ..models import Situation
+import os
 
-API_KEY = "AIzaSyDZyBoLtY9TKlrDQlEYWYf6H4mZKSv2Uj8"
+API_KEY = os.getenv("GEMINI_API_KEY")
 FLASH_MODEL = "gemini-2.0-flash"
 PRO_MODEL = "gemini-2.0-pro"
 MAX_HISTORY = 15
